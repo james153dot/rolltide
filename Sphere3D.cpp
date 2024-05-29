@@ -58,7 +58,7 @@ ImmersedBoundaries::setImmersedBoundaryVariablesOnPatch(
     
     const int num_ghosts_0 = num_ghosts[0];
     const int num_ghosts_1 = num_ghosts[1]; 
-/*  const int num_ghosts_2 = num_ghosts[2]; do I need this?  */
+    const int num_ghosts_2 = num_ghosts[2];
     const int ghostcell_dim_0 = ghostcell_dims[0];
     
     /************************************************
@@ -116,7 +116,7 @@ ImmersedBoundaries::setImmersedBoundaryVariablesOnPatch(
                 // Angle between the positive z-axis and the vector formed by the origin and the point. 0 < phi < pi
                 const double phi = acos(x[2]/(sqrt(pow(x[0], 2) + pow(x[1], 2) + pow(x[2], 2))))*(180.0/M_PI);
                 
-                if (radius < radius_c) // Condition that should be satisfied to be in cylinder.
+                if (radius < radius_c) // Condition that should be satisfied to be in sphere.
                 {
                     double x_p = double(0);
                     double y_p = double(0);
@@ -124,14 +124,14 @@ ImmersedBoundaries::setImmersedBoundaryVariablesOnPatch(
                 
                     if (x[2] > z_c)
                     {   
-                        z_c = radius_c*cos(phi); 
-                                        // positive z
+                        z_p = radius_c*cos(phi); 
+                                        // positive z : (x,y,+)
 
-                        if (x[0] > x_c) // positive x
+                        if (x[0] > x_c) // positive x : (+,y,+)
                         {
                             x_p = radius_c*sin(phi)*cos(theta);
                         }
-                        else            // negative x  
+                        else            // negative x : (-,y,+)
                         {
                             x_p = -radius_c*sin(phi)*cos(theta);
                         }
@@ -142,19 +142,19 @@ ImmersedBoundaries::setImmersedBoundaryVariablesOnPatch(
                         }
                         else            // negative y : octant III  and octant IV : (+,-,+) / (-,-,+)
                         {
-                            y_p = radius_c*sin(phi)*sin(theta);
+                            y_p = -radius_c*sin(phi)*sin(theta);
                         }
                     }
-                    else (x[2] < z_c)
+                    else
                     {
-                        z_c = -radius_c*cos(phi); 
-                                        // negative z
+                        z_p = -radius_c*cos(phi); 
+                                        // negative z : (x,y,-)
 
-                        if (x[0] > x_c) // positive x
+                        if (x[0] > x_c) // positive x : (+,y,-)
                         {
                             x_p = radius_c*sin(phi)*cos(theta);
                         }
-                        else            // negative x  
+                        else            // negative x : (-,y,-)
                         {
                             x_p = -radius_c*sin(phi)*cos(theta);
                         }
@@ -165,7 +165,7 @@ ImmersedBoundaries::setImmersedBoundaryVariablesOnPatch(
                         }
                         else            // negative y : octant VII  and octant VIII : (-,-,-) / (+,-,-)
                         {
-                            y_p = radius_c*sin(phi)*sin(theta);
+                            y_p = -radius_c*sin(phi)*sin(theta);
                         }
                     }
 
@@ -177,7 +177,7 @@ ImmersedBoundaries::setImmersedBoundaryVariablesOnPatch(
                     {
                         mask[idx]   = int(IB_MASK::IB_GHOST); /* basically takes the cell and finds the distance to see if its a ghost cell. makes it a ghost cell*/
                         dist[idx]   = radius_c - radius; // wall distance
-                        norm_0[idx] = (x[0] - x_c)/radius; // normal vector from cylinder center to cell center 
+                        norm_0[idx] = (x[0] - x_c)/radius; // normal vector from sphere center to cell center 
                         norm_1[idx] = (x[1] - y_c)/radius;
                         norm_2[idx] = (x[2] - z_c)/radius;
 
