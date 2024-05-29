@@ -159,7 +159,7 @@ NavierStokesInitialConditions::initializeDataOnPatch(
                     {
                         // Compute index into linear data array.
                         int idx_cell = (i + num_ghosts_cons_var[0]) +
-                            (j + num_ghosts_cons_var[1]) + (k + num_ghosts_con_var[2])*ghostcell_dims_cons_var[0];
+                            (j + num_ghosts_cons_var[1]) + (k + num_ghosts_con_var[2])*ghostcell_dims_cons_var[0]; //incorrect
                         
                         Real x[3];
                         x[0] = patch_xlo[0] + (Real(i) + half)*Real(dx[0]); // x coordinates of the point.
@@ -168,67 +168,83 @@ NavierStokesInitialConditions::initializeDataOnPatch(
 
                         rho[idx_cell] = rho_inf; // Initial density 
                         
-                        r       = std::pow((x[0] - x_c), Real(2)) + std::pow((x[1] - y_c), Real(2)) + std::pow(x[2] - z_c, Real(2)); // radial distance from the center
+                        r       = std::pow((x[0] - x_c), 2) + std::pow((x[1] - y_c), 2) + std::pow(x[2] - z_c, 2);
+                        // radial distance from the center
                         r       = std::pow(r, half); 
-                        //get a new one
                         theta   = std::atan((x[1] - y_c)/(x[0] - x_c)) + 30.0*M_PI/180.0; // done in polar coordinates (30)
-                        V_r     =  u_inf*(Real(1) - D*D/(Real(4)*r*r))*std::cos(theta); // the generalized velocity equaton for clyinder 
-                        V_theta = -u_inf*(Real(1) + D*D/(Real(4)*r*r))*std::sin(theta); // angular velocity 
                         
+                        /* V_r     =  u_inf*(1 - D*D/(4*r*r))*std::cos(theta); // the generalized velocity equaton for clyinder 
+                        V_theta = -u_inf*(1 + D*D/(4*r*r))*std::sin(theta); // angular velocity  */
 
-
-
-
-                        if (r < D/Real(4)) // veolicty goes to zero within these points 
-                        // do i want to make it in terms of x-y-z or use an if-else statement
+                        if (r < D/4) // veloicty goes to zero within these points (inside the circle)
                         {
-                            V_r     = Real(0);
-                            V_theta = Real(0);
+                            u_ic = 0;
+                            v_ic = 0;
+                            w_ic = 0;
                         }
-                        //else 
+                        else 
 
-                        /*u_ic = (V_r*std::cos(theta) - V_theta*std::sin(theta)); // inital condiitons for the velocity and the pressure
-                        //v_ic = (V_r*std::sin(theta) + V_theta*std::cos(theta));*/
+                        u_ic = u_inf*((1 - ((3*std::pow(D, 3))*x_c*x_c)/16*std::pow(r, 5)) + std::pow(D,3)/(16*std::pow(r,3)));
+                        v_ic = -u_inf*((3*std::pow(D,3)*x_c*y_c)/16*std::pow(r,5));
+                        w_ic = -u_inf*((3*std::pow(D,3)*x_c*z_c)/16*std::pow(r,5));
+                        // new velocity terms in x-y-z from AA-200 Stanford
 
-                        u_ic = u_inf * (Real(1) - (Real(3)*std::pow((D), Real(3))*x_c*x_c)/Real(16) )
+                        p_ic = p_inf + half*rho_inf*(u_inf*u_inf - (u_ic*u_ic + v_ic*v_ic + w_ic*w_ic)); 
+                        // modified pressure term
 
-                        p_ic = p_inf + half*rho_inf*(u_inf*u_inf - (u_ic*u_ic + v_ic*v_ic + w_ic*w_ic)); // modified pressure equation
-                        
-                        
-
-                        if(x[0] < x_c) /* error function to make sponge layer, which basically dampens the N.S. This is so there isn't a massive jump 
-                        discontiny between the boundary conditions at inf  and our actualy values*/ 
-
-                        // go add a third in term of z-d
+                        if(x[0] < x_c) // x-values
                         {
                             u = half * (u_inf + u_ic) + half * (u_ic - u_inf)*erf((x[0]-spongeL)/(D/Real(5)));
                             v = half * (v_inf + v_ic) + half * (v_ic - v_inf)*erf((x[0]-spongeL)/(D/Real(5)));
+                            w = half * (w_inf + w_ic) + half * (w_ic - w_inf)*erf((x[0]-spongeL)/(D/Real(5)));
                             p = half * (p_inf + p_ic) + half * (p_ic - p_inf)*erf((x[0]-spongeL)/(D/Real(5)));
                         }
                         else
+
                         {
                             u = half * (u_inf + u_ic) - half * (u_ic - u_inf)*erf((x[0]-spongeR)/(D/Real(5)));
                             v = half * (v_inf + v_ic) - half * (v_ic - v_inf)*erf((x[0]-spongeR)/(D/Real(5)));
+                            w = half * (w_inf + w_ic) + half * (w_ic - w_inf)*erf((x[0]-spongeR)/(D/Real(5)));
                             p = half * (p_inf + p_ic) - half * (p_ic - p_inf)*erf((x[0]-spongeR)/(D/Real(5)));
                         }
 
-                        if (x[1] < y_c) // y-values as opposed to x values
+                        if (x[1] < y_c) // y-values
                         {
                             u = half * (u_inf + u_ic) + half * (u_ic - u_inf)*erf((x[1]-spongeB)/(D/Real(5)));
                             v = half * (v_inf + v_ic) + half * (v_ic - v_inf)*erf((x[1]-spongeB)/(D/Real(5)));
+                            w = half * (w_inf + w_ic) + half * (w_ic - w_inf)*erf((x[1]-spongeB)/(D/Real(5)));
                             p = half * (p_inf + p_ic) + half * (p_ic - p_inf)*erf((x[1]-spongeB)/(D/Real(5)));
                         }
                         else
+
                         {
                             u = half * (u_inf + u_ic) - half * (u_ic - u_inf)*erf((x[1]-spongeT)/(D/Real(5)));
                             v = half * (v_inf + v_ic) - half * (v_ic - v_inf)*erf((x[1]-spongeT)/(D/Real(5)));
+                            w = half * (w_inf + w_ic) + half * (w_ic - w_inf)*erf((x[1]-spongeT)/(D/Real(5)));
                             p = half * (p_inf + p_ic) - half * (p_ic - p_inf)*erf((x[1]-spongeT)/(D/Real(5)));
 
+                        }
+                        
+                        if (x[2] < z_c) // z-values
+                        {
+                            u = half * (u_inf + u_ic) - half * (u_ic - u_inf)*erf((x[2]-spongeF)/(D/Real(5)));
+                            v = half * (v_inf + v_ic) - half * (v_ic - v_inf)*erf((x[2]-spongeF)/(D/Real(5)));
+                            w = half * (w_inf + w_ic) + half * (w_ic - w_inf)*erf((x[2]-spongeF)/(D/Real(5)));
+                            p = half * (p_inf + p_ic) - half * (p_ic - p_inf)*erf((x[2]-spongeF)/(D/Real(5)));
+                        }
+                        else
+
+                        {
+                            u = half * (u_inf + u_ic) - half * (u_ic - u_inf)*erf((x[2]-spongeK)/(D/Real(5)));
+                            v = half * (v_inf + v_ic) - half * (v_ic - v_inf)*erf((x[2]-spongeK)/(D/Real(5)));
+                            w = half * (w_inf + w_ic) + half * (w_ic - w_inf)*erf((x[2]-spongeK)/(D/Real(5)));
+                            p = half * (p_inf + p_ic) - half * (p_ic - p_inf)*erf((x[2]-spongeK)/(D/Real(5)));
                         }
 
                         rho_u[idx_cell] = rho_inf*u;
                         rho_v[idx_cell] = rho_inf*v;
                         rho_w[idx_cell] = rho_inf*w;
+
                         E[idx_cell]     = p/(gamma - Real(1)) + half*rho_inf*(u*u + v*v + w*w);
                 } // updates every single cell with the new values
             }
