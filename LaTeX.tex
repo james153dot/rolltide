@@ -1,0 +1,109 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{unicode-math}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{atbegshi}% http://ctan.org/pkg/atbegshi
+\usepackage[a4paper,
+            bindingoffset=0.2in,
+            left=1in,
+            right=1in,
+            top=1in,
+            bottom=1in,
+            footskip=.25in]{geometry}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    }
+\captionsetup[figure]{font=small}
+\setlength\parindent{0pt}
+\AtBeginDocument{\AtBeginShipoutNext{\AtBeginShipoutDiscard}}
+\title{Equations Found in our Code}
+\author{James Lu, Denis Aslangil}
+\date{Summer 2024}
+\begin{document}
+\begin{center}
+\maketitle
+\section*{Change of Coordinate System}
+\setcounter{page}{1}
+\begin{Large}
+The Cartesian system uses \(x, y, z\), and is most commonly used.\\
+We use spherical variables \(r, \theta, \phi\) in the Spherical system. 
+Converting from Cartesian to Spherical requires use of these equations.
+\bigbreak
+\textbf{Cartesian to Spherical system conversion}
+
+\begin{small} Typically both $\theta$ and $\phi$ come in degrees, but conversion is simple. \end{small}
+\[
+x = r \cos(\theta) \sin(\phi) 
+\]
+\[
+y = r \sin(\theta) \sin(\phi)
+\]
+\[
+z = r \cos(\phi)
+\]
+\textbf{Spherical to Cartesian system conversion}
+
+\begin{small}
+These conversions are used most in lines 116-120 of our Sphere3D code.
+\end{small}
+\[
+r = \sqrt{(x-x_c)^2 + (y-y_c)^2 + (z-z_c)^2}
+\]
+\[
+\theta = \arctan \left( \frac{y-y_c}{x-x_c} \right)
+\]
+\[
+\phi = \arccos \left( \frac{(z-z_c)}{\sqrt{(x-x_c)^2 + (y-y_c)^2 + (z-z_c)^2}} \right)
+\]
+\end{Large}
+
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.4\linewidth]{image.png}
+    \caption{https://byjus.com/maths/spherical-coordinates/}
+    \label{fig:enter-label}
+\end{figure}
+\pagebreak
+\begin{Large}
+\section*{New Velocity Terms}
+Our velocity terms come from Stanford AA200 - Applied Aerodynamics.
+It is in the Cartesian system and defines uniform flow past a sphere.
+\bigbreak
+\textbf{Direct terms from textbook}
+
+\begin{small}\href{https://web.stanford.edu/~cantwell/AA200_Course_Material/AA200_Lectures/AA200_Ch_10_Elements_of_potential_flow_Vortex_Sticks_and_Stokes_Flow_Brian_Cantwell.pdf}{Equation 10.75}\end{small}
+\[
+U_x = U_\infty (1-\frac{3(R_{sphere})^3x^2}{2r^5} + \frac{(R_{sphere})^3}{2r^3} )
+\]
+\[
+U_y = -U_\infty \frac{3(R_{sphere})^3xy}{2r^5} )
+\]
+\[
+U_z = -U_\infty \frac{3(R_{sphere})^3xz}{2r^5} 
+\]
+\bigbreak
+\textbf{For our specific case}
+\bigbreak
+We used diameter as opposed to radius in our declaration of variables, giving a mathematically identical equation but one that looks slightly different.
+\bigbreak
+\[
+U_x = U_\infty (1-\frac{3(D_{sphere})^3x^2}{16r^5} + \frac{(D_{sphere})^3}{16r^3} )
+\]
+\[
+U_y = -U_\infty \frac{3(D_{sphere})^3xy}{16r^5} )
+\]
+\[
+U_z = -U_\infty \frac{3(D_{sphere})^3xz}{16r^5}
+\]
+\bigbreak
+These equations are declared, defined, and used in lines 193-195 of
+file UniformFlow3D.
+
+\end{Large}
+\end{center}
+\end{document}
